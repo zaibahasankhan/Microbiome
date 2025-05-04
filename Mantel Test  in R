@@ -1,0 +1,56 @@
+#load vegan and geosphere
+
+library(vegan)
+library(geosphere)
+
+#install.packages("geosphere")
+
+#load in your data (csv file) with columns as OTUs, and rows as samples
+#Data should be having env variables and OTUs together for each sample in one csv file
+
+df = read.csv("/../OTU_table.csv", header= TRUE)
+
+#abundance data frame
+abund = df[,6:ncol(df)]  #number of column from where the otus starting 
+
+#environmental vector
+temp = df$name_of_env_variable       #the env variable you are interested in (present in the csv file)
+
+#longitude and latitude 
+geo = data.frame(df$Longitude, df$Latitude) # present in the csv file
+
+# create distance matrix
+
+#abundance data frame - bray curtis dissimilarity
+dist.abund = vegdist(abund, method = "bray")
+
+#environmental vector - euclidean distance
+dist.temp = dist(temp, method = "euclidean")
+
+#geographic data frame - haversine distance 
+d.geo = distm(geo, fun = distHaversine)
+dist.geo = as.dist(d.geo)
+
+
+#abundance vs environmental 
+abund_temp = mantel(dist.abund, dist.temp, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_temp
+
+#abundance vs geographic 
+abund_geo  = mantel(dist.abund, dist.geo, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_geo
+
+#########################################################################################################
+#create environmental data frame by combining all env variables 
+#make subset of the data
+env = df[,2:7] #suppose yoy have env variables from column 2 to 7
+
+#scale the data 
+scale.env = scale(env, center = TRUE, scale = TRUE)
+
+#create distance matrix of scaled data
+dist.env = dist(scale.env, method = "euclidean")
+
+#run mantel test 
+abund_env = mantel(dist.abund, dist.env, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_env
