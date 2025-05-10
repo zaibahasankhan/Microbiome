@@ -1,0 +1,140 @@
+#Manifest
+echo "# paired-end PHRED 33 fastq manifest file for forward and reverse reads" > manifest1.txt
+echo -e "sample-id\tforward-absolute-filepath\treverse-absolute-filepath" >> manifest1.txt
+ls *.fastq | cut -d "_" -f 1 | sort | uniq | parallel -j0 --keep-order 'echo -e "{/}\t"$PWD"/{/}_R1.fastq\t"$PWD"/{/}_R2.fastq"' | tr -d "'" > manifest2.txt
+
+mkdir manifest
+
+cat manifest1.txt manifest2.txt > manifest/manifest.tsv
+
+
+#Import
+ qiime tools import \
+--type 'SampleData[PairedEndSequencesWithQuality]' \
+--input-path manifest/manifest.tsv \
+--output-path demux.qza \
+--input-format PairedEndFastqManifestPhred33V2
+
+
+qiime demux summarize  \
+  --i-data demux.qza \
+   --o-visualization demux.qzv
+
+#Sequence quality control and feature table construction
+#DADA2
+
+#Based on quality plot, select no. of bases to trim and truncate
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs demux.qza \
+  --p-trim-left-f 0 \
+  --p-trim-left-r 0 \
+  --p-trunc-len-f 240 \
+  --p-trunc-len-r 230 \
+  --o-table table.qza \
+  --o-representative-sequences rep-seqs.qza \
+  --o-denoising-stats denoising-stats.qza
+
+qiime metadata tabulate \
+  --m-input-file denoising-stats.qza \
+  --o-visualization stats.qzv
+
+
+#FeatureTable and FeatureData summaries
+#metadata file (in tsv )
+qiime feature-table summarize \
+  --i-table table.qza \
+  --o-visualization table.qzv \
+  --m-sample-metadata-file Metadata.tsv 
+
+
+#Optional step (viewing metadata in an interactive table)
+#how many sequences are associated with each sample and with each feature, histograms of those distributions, and some related summary statistics
+qiime metadata tabulate \
+  --m-input-file Metadata.tsv \
+  --o-visualization tabulated-sample-metadata.qzv
+
+
+#Mapping of feature IDs to sequences, and provide links to easily BLAST each sequence against the NCBI nt database
+qiime feature-table tabulate-seqs \
+  --i-data rep-seqs.qza \
+  --o-visualization rep-seqs.qzv
+
+#Generate a tree for phylogenetic diversity analyses
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep-seqs.qza \
+  --o-alignment aligned-rep-seqs.qza \
+  --o-masked-alignment masked-aligned-rep-seqs.qza \
+  --o-tree unrooted-tree.qza \
+  --o-rooted-tree rooted-tree.qza
+
+#Alpha and beta diversity analysis
+qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny rooted-tree.qza \
+  --i-table table.qza \
+  --p-sampling-depth 210 \
+  --m-metadata-file Metadata.tsv \
+  --output-dir core-metrics-results
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/faith_pd_vector.qza \
+  --m-metadata-file Metadata.tsv \
+  --o-visualization core-metrics-results/faith-pd-group-significance.qzv
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/evenness_vector.qza \
+  --m-metadata-file Metadata.tsv \
+  --o-visualization core-metrics-results/evenness-group-significance.qzv
+
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file Metadata.tsv \
+  --m-metadata-column Gender \
+  --o-visualization core-metrics-results/unweighted-unifrac-body-site-significance.qzv \
+  --p-pairwise
+#(if you have more variables repeat the process using your column of interest)
+
+#PCoA
+qiime emperor plot \
+  --i-pcoa core-metrics-results/unweighted_unifrac_pcoa_results.qza \
+  --m-metadata-file Metadata.tsv \
+  --p-custom-axes Age \
+  --o-visualization core-metrics-results/Age.qzv
+
+
+#Alpha rarefaction plotting
+qiime diversity alpha-rarefaction \
+  --i-table table.qza \
+  --i-phylogeny rooted-tree.qza \
+  --p-max-depth 2206 \
+  --m-metadata-file Metadata.tsv \
+  --o-visualization alpha-rarefaction.qzv
+
+#Taxonomic analysis
+ #Download classifier: 
+wget -O "gg-13-8-99-515-806-nb-classifier.qza" \
+  'https://data.qiime2.org/2023.9/common/gg-13-8-99-515-806-nb-classifier.qza'
+
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier gg-13-8-99-515-806-nb-classifier.qza \
+  --i-reads rep-seqs.qza \
+  --o-classification taxonomy.qza
+#classifire for v4 region
+
+qiime metadata tabulate \
+  --m-input-file taxonomy.qza \
+  --o-visualization taxonomy.qzv
+
+#Barplots 
+qiime taxa barplot \
+  --i-table table.qza \
+  --i-taxonomy taxonomy.qza \
+  --m-metadata-file Metadata.tsv \
+  --o-visualization taxa-bar-plots.qzv
+
+ 
+
+
+
+
