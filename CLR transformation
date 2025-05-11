@@ -1,0 +1,27 @@
+library(compositions)
+
+df <- Phylum_OTU
+df
+
+
+#save the sample names from the first column
+Samples <- df$Phylum
+
+#remove the first column to keep only numeric columns 
+df_numeric <- df[, -1]
+
+#add pseudocount to handle zeros
+df_numeric[df_numeric == 0] <- 1
+
+#apply CLR transformation sample-wise (row-wise) Samples
+clr_table <- t(apply(df_numeric, 1, clr))  # t() because apply returns transposed
+clr_table <- as.data.frame(clr_table)
+
+#set the sample names back as row names
+rownames(clr_table) <- Samples
+
+#view the CLR-transformed table
+View(clr_table)
+
+#save the results
+write.csv(clr_table,"~/Documents/clr_table.csv")
