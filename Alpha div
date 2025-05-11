@@ -1,0 +1,27 @@
+#load libraries
+library(vegan)
+library(permute)
+#Samples in rows and OTUs in columns
+df <- Phylum_OTU
+df2 <- df[,-1] #first column is non-numeric contains Samples name
+
+# calculate richness and Chao1 
+data_richness <- estimateR(df2) 
+# calculate evenness index 
+data_evenness <- diversity(df2) / log(specnumber(df2)) 
+# calculate Shannon index 
+data_shannon <- diversity(df2, index = "shannon")  
+# calculate Shannon index 
+data_simpson <- diversity(df2, index = "simpson")  
+# combine all indices in one data table
+data_alphadiv <- cbind(df2, t(data_richness), data_shannon, data_evenness, data_simpson) 
+# remove the unnecessary data/vector
+rm(data_richness, data_evenness, data_shannon, data_simpson)
+
+
+#Add column named Samples to the data
+data_alphadiv$Samples <- paste0("Sample", 1:10)
+
+# move column Samples to first column 
+data_Sorted = data_alphadiv[, c("Samples", 
+                        names(data_alphadiv)[names(data_alphadiv) != "Samples"])] 
