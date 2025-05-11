@@ -1,0 +1,103 @@
+## Load libraries ##################
+library(ggpubr)
+library(tidyverse)
+library(Hmisc)
+library(corrplot)
+library(lattice)
+library(survival)
+library(Formula)
+library(ggplot2)
+
+df <-  read.csv("~/Documents/clr_table.csv")  #data should be CLR transformed
+df <- df[,-1]
+View(df)
+
+M<-cor(df)
+head(round(M,2))
+
+corrplot(M, method = "circle")
+
+corrplot(M, type = "upper")
+
+corrplot(M, order = "hclust")
+
+corrplot(M, type = "upper", tl.srt = 90, order = "hclust")
+
+##change color of labels and labels at 45 degree angle
+corrplot(M, type = "upper", order = "hclust", tl.col = "darkblue", tl.srt = 45) 
+
+##Combining correlogram with the significance test##
+cor_5 <- rcorr(as.matrix(df))
+M <- cor_5$r
+p_mat <- cor_5$P
+
+##With hclust## 
+corrplot(M, type = "upper", order = "hclust", 
+         p.mat = p_mat, sig.level = 0.05, tl.srt = 45)
+
+##without hclust###
+corrplot(M, type = "upper", 
+         p.mat = p_mat, sig.level = 0.05, tl.srt = 45)
+
+#### dots showing for significant only (labels at 90 degree) #################
+corrplot(cor_5$r, type = "upper", order = "hclust",
+         p.mat = cor_5$P, sig.level = 0.05, insig = "blank", tl.srt = 90)
+#####################
+corrplot(M, type = "upper",
+         p.mat = p_mat, sig.level = 0.05, insig = "blank", tl.srt = 90)
+############## Blank####
+corrplot(M, type = "upper", 
+         p.mat = p_mat, sig.level = 0.05, insig = "n", tl.srt = 90)
+
+############Remove ? from the data #############
+
+corrplot(M, type = "upper", 
+         p.mat = p_mat, sig.level = 0.05, insig = "blank", tl.srt = 90, na.label=" ")
+
+
+##### Corr plot with all corr values ############################################
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(M, method = "color", col = col(200),  
+         type = "upper", order = "hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "darkblue", tl.srt = 90, #Text label color and rotation
+         # Combine with significance level
+         p.mat = p_mat, sig.level = 0.05,  
+         # hide correlation coefficient on the principal diagonal
+         diag = FALSE
+)
+#######################################
+
+########## Corr plot with only significant  corr values  #############
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(M, method = "color", col = col(200),  
+         type = "upper", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "red", insig = "blank", tl.srt = 90, #Text label color and rotation
+         # Combine with significance level
+         p.mat = p_mat, sig.level = 0.05,number.cex=0.45,   
+         # hide correlation coefficient on the principal diagonal
+         diag = TRUE 
+)
+################################
+#########To resize the values in corr plot####
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(M, method = "color", col = col(200),  
+         type = "upper", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "red", tl.srt = 90, number.cex=0.7)
+##########
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(M, method = "color", col = col(200),  
+         type = "upper", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "black", tl.srt = 45, number.cex=0.5, diag = FALSE)
+###########
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(M, method = "color", col = col(200),  
+         type = "upper", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "red", tl.srt = 45, number.cex=0.6)
+
+###############################
