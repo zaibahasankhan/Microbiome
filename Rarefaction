@@ -1,0 +1,46 @@
+#libraries
+library(vegan)
+library(tidyverse)
+
+
+x = Phylum_OTU
+View(x)
+
+x1 <- x[,-1]
+
+#Rarefaction parameters
+#Number of observed species per sample (Richness)
+S <- specnumber(x1)
+
+#Minimum sample size across all samples (for standardizing)
+raremax <- min(rowSums(x1))
+#rowSums(x1) #to see total of rows #see minimum number
+
+#Rarefied table (individuals per site)
+p <- rrarefy(x1, raremax) 
+View(p)
+#rowSums(p) 
+
+
+#Expected species richness at rarefied sample size
+Srare <- rarefy(x1, sample = raremax, se = FALSE, MARGIN = 1)
+
+#Extrapolated richness
+z <- drarefy(x1, sample = raremax)
+
+#Plotting: Observed vs rarefied richness
+par(mfrow = c(1, 2))
+plot(S, Srare, xlab = "Observed Number of Species", 
+     ylab = "Rarefied Number of Species",
+     main = "Observed vs Rarefied Species Richness")
+abline(0, 1, col = "red")
+
+#Rarefaction curves
+rarecurve(x1, step = 20, 
+          sample = raremax, 
+          col = "blue", 
+          cex = 0.6,
+          main = "Rarefaction Curves")
+
+#Save rarefied data
+write.csv(p, "~/Documents/rarefied_data.csv")
