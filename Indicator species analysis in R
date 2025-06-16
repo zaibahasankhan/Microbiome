@@ -2,7 +2,7 @@
 ############ Indicator species analysis ##########################
 install.packages("indicspecies")
 library(indicspecies)
-pc = read.csv(“PATH/merged_otu_metadata.csv", header= TRUE)
+pc = read.csv(“merged_otu_metadata.csv", header= TRUE)
 
 
 
