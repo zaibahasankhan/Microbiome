@@ -1,0 +1,21 @@
+# Read the tsv file
+df <- read.delim("~/Downloads/Cont_17.tsv", header = FALSE, col.names = c("Taxonomy", "Count"))
+
+# Split taxonomy into levels
+taxonomy_split <- strsplit(as.character(df$Taxonomy), "\\|")
+
+# Find the maximum depth (e.g., up to species)
+max_depth <- max(sapply(taxonomy_split, length))
+
+# Create a new dataframe with separate columns
+taxonomy_df <- as.data.frame(do.call(rbind, lapply(taxonomy_split, `length<-`, max_depth)))
+colnames(taxonomy_df) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")[1:max_depth]
+
+# Bind with counts
+df_final <- cbind(taxonomy_df, Count = df$Count)
+
+df_sorted_phylum <- df_final[order(df_final$Phylum, decreasing = FALSE), ]
+df_sorted_genus_species <- df_final[order(df_final$Genus, df_final$Species), ]
+
+df_sorted_by_count <- df_final[order(df_final$Phylum, -df_final$Count), ]
+write.csv(df_sorted_genus_species, "~/Downloads/Cont_17.csv", row.names = FALSE)
