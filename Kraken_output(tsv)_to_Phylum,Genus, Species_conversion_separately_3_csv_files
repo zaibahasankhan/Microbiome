@@ -1,0 +1,75 @@
+# Load packages
+library(dplyr)
+library(tidyr)
+
+# Read your tab-separated file (assuming no header)
+df <- read.table("~/Downloads/Cont_29.tsv", sep = "\t", header = FALSE, fill = TRUE,
+                 col.names = c("Taxonomy", "Count", "Domain", "Phylum"))
+
+# Split taxonomy string into levels
+df_split <- df %>%
+  mutate(Taxonomy_levels = strsplit(as.character(Taxonomy), "\\|")) %>%
+  mutate(Phylum = sapply(Taxonomy_levels, function(x) if (length(x) >= 2) x[2] else NA)) %>%
+  filter(!is.na(Phylum))
+
+# For each phylum, keep the first occurrence (or max count if desired)
+# Keep first entry per phylum
+phylum_df <- df_split %>%
+  group_by(Phylum) %>%
+  slice(1) %>%
+  ungroup() %>%
+  select(Phylum, Count)
+
+# Save output
+
+write.table(phylum_df, "~/Downloads/Controls_All_taxonomy/Cont_29_phylum_counts.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+##########for Genus #######
+
+library(dplyr)
+
+# Read your data (assumes no header, tab-separated)
+df <- read.table("~/Downloads/Cont_29.tsv", sep = "\t", header = FALSE, fill = TRUE,
+                 col.names = c("Taxonomy", "Count", "Domain", "Phylum"))
+
+# Split taxonomy into levels
+df$TaxonomyLevels <- strsplit(as.character(df$Taxonomy), "\\|")
+
+# Extract Genus (6th level)
+df$Genus <- sapply(df$TaxonomyLevels, function(x) if (length(x) >= 6) x[6] else NA)
+
+# Filter rows with non-missing genus
+genus_df <- df %>%
+  filter(!is.na(Genus)) %>%
+  group_by(Genus) %>%
+  summarise(Count = max(Count)) %>%
+  arrange(desc(Count))
+
+# Save to file
+write.table(genus_df, "~/Downloads/Controls_All_taxonomy/Cont_29_genus_counts.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+##### Species ######
+library(dplyr)
+
+# Read the file (assumes no header, tab-separated)
+df <- read.table("~/Downloads/Cont_29.tsv", sep = "\t", header = FALSE, fill = TRUE,
+                 col.names = c("Taxonomy", "Count", "Domain", "Phylum"))
+
+# Split taxonomy into levels
+df$TaxonomyLevels <- strsplit(as.character(df$Taxonomy), "\\|")
+
+# Extract Species (7th level)
+df$Species <- sapply(df$TaxonomyLevels, function(x) if (length(x) >= 7) x[7] else NA)
+
+# Filter for valid species rows (non-NA and non-empty)
+species_df <- df %>%
+  filter(!is.na(Species)) %>%
+  group_by(Species) %>%
+  summarise(Count = max(Count)) %>%
+  arrange(desc(Count))
+
+# Save to file
+write.table(species_df, "~/Downloads/Controls_All_taxonomy/Cont_29__species_counts.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
+
