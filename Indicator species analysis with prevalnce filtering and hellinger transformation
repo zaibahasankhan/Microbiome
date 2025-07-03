@@ -24,7 +24,7 @@ library(tidyr)
 
 # Prevalence filtering
 prevalence_threshold <- 0.2  # i.e., 20%
-present_counts <- colSums(abund > 0)
+present_counts <- colSums(abund > 0) #more than 10 counts
 keep_taxa <- present_counts >= (nrow(abund) * prevalence_threshold)
 otu_filtered <- abund[, keep_taxa]
 
