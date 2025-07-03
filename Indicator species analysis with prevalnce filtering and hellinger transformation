@@ -1,0 +1,44 @@
+
+############ Indicator species analysis ##########################
+install.packages("indicspecies")
+library(indicspecies)
+pc = read.csv("~/Downloads/Meta_plus_Spp_for_indicspp.csv", header= TRUE)
+
+abund = pc[,5:ncol(pc)] #from where otus(abundance) start 
+group = pc$Study_Groups #vector contains information on group column
+
+inv = multipatt(abund, group, func = "r.g", control = how(nperm=9999))
+summary(inv)
+
+
+######### with prevalency filtering ################################
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("phyloseq")
+
+
+library(phyloseq)    # if using phyloseq
+library(dplyr)
+library(tidyr)
+
+# Prevalence filtering
+prevalence_threshold <- 0.2  # i.e., 20%
+present_counts <- colSums(abund > 0)
+keep_taxa <- present_counts >= (nrow(abund) * prevalence_threshold)
+otu_filtered <- abund[, keep_taxa]
+
+group= pc$Study_Groups
+
+# Hellinger transform
+library(vegan)
+otu_hellinger <- decostand(otu_filtered, method = "hellinger")
+
+inv = multipatt(otu_filtered, group, func = "r.g", control = how(nperm=9999))
+summary(inv)
+sig_results <- inv$sign
+sig_results <- sig_results[sig_results$p.value <= 0.05, ]
+
+
+
+write.csv(sig_results, "~/Downloads/Inndicspp.csv")
