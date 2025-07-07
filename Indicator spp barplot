@@ -1,0 +1,89 @@
+library(ggplot2)
+
+
+
+df <- read.csv("~/Downloads/for_barplot_Indic_spp.csv")
+
+
+# Change barplot fill colors by groups
+
+p <-ggplot(df, aes(x= Indicator_species, y=p_value, fill=Study_Groups)) +
+  geom_bar(width = 0.25, stat="identity")+theme_minimal()+
+  theme_classic()+
+  labs(x = "Species", y= "p value")+
+  coord_flip()+
+  theme(axis.title.x = element_text(face = "bold", size = 20),
+        axis.text.x = element_text(size = 16, face = "bold"),
+        axis.text.y = element_text(size = 16, face = "bold.italic"),
+        axis.title.y = element_text(face = "bold", size = 20),
+        legend.title = element_text(face = "bold", size = 16), 
+        legend.text = element_text(face = "bold", size = 16)) + scale_fill_manual(values=c('blue','orange', 'green'),
+                                                                                  labels = c('Control', 'Leukemia', 'PCD')
+                                                                                  )
+
+
+p
+
+#####level order ####################
+p <- ggplot(df, aes(x = level_order, y = p_value, fill = Study_Groups)) +
+  geom_bar(width = 0.25, stat = "identity") +
+  theme_classic() +
+  labs(x = "Species", y = "p value") +
+  coord_flip() +
+  theme(
+    axis.title.x = element_text(face = "bold", size = 20),
+    axis.text.x = element_text(size = 16, face = "bold"),
+    axis.text.y = element_text(size = 16, face = "bold.italic"),
+    axis.title.y = element_text(face = "bold", size = 20),
+    legend.title = element_text(face = "bold", size = 16), 
+    legend.text = element_text(face = "bold", size = 16)
+  ) +
+  scale_fill_manual(
+    values = c("blue", "orange", "green"),
+    labels = c("Control", "Leukemia", "PCD")
+  )
+
+p
+####### level order microbes ############
+level_order <- factor(df$Indicator_species, level =  c ( 'Eggerthella lenta',
+                                                         'Ruminococcus torques',
+                                              'Streptococcus luteciae',
+                                              'Serratia marcescens',
+                                              'Lactobacillus brevis',
+                                              'Carnobacterium viridans',
+                                              'Leuconostoc mesenteroides',
+                                              'Salmonella enterica',
+                                              'Erwinia dispersa',
+                                              'Klebsiella oxytoca',
+                                              'Plesiomonas shigelloides',
+                                              'Serratia symbiotica',
+                                              'Trabulsiella farmeri',
+                                              'Lactobacillus ruminis',
+                                              'Prevotella copri',
+                                              'Roseburia faecis',
+                                              'Eubacterium biforme',
+                                              'Haemophilus parainfluenzae',
+                                              'Faecalibacterium prausnitzii')) 
+
+
+
+
+p <- ggplot(df, aes(x = level_order, y = p_value, fill = Study_Groups)) +
+  geom_bar(width = 0.35, stat = "identity") +
+  theme_classic() +
+  labs(x = "Indicator species", y = "-log10 p value") +
+  coord_flip() +
+  theme(
+    axis.title.x = element_text(face = "bold", size = 18),
+    axis.text.x = element_text(size = 14, face = "bold"),
+    axis.text.y = element_text(size = 14, face = "bold.italic"),
+    axis.title.y = element_text(face = "bold", size = 18),
+    legend.title = element_text(face = "bold", size = 14), 
+    legend.text = element_text(face = "bold", size = 14)
+  ) +
+  scale_fill_manual(
+    values = c("Control" = "#FF3399", "PCD" = "#9900FF", "Leukemia" = "#009966" ),
+    labels = c("Control", "Leukemia", "PCD")
+  )
+
+p
