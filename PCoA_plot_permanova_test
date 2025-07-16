@@ -1,0 +1,95 @@
+#libraries
+library(tidyverse)
+library(vegan)
+library(lattice)
+library(permute)
+library(ggplot2)
+library(glue)
+library(ggtext)
+
+
+#Load microbial abundance data: rows:Samples, columns:Microbes
+df <- read.csv("~/Downloads/Spp_for_indicspp_PCoA.csv", header = TRUE, row.names = 1)
+
+#Compute Bray-Curtis distance
+braycurtis <- vegdist(df, method = "bray")
+
+#Run PCoA
+pcoa <- cmdscale(braycurtis, k = 2, eig = TRUE, add = TRUE)
+positions <- as.data.frame(pcoa$points)
+colnames(positions) <- c("pcoa1", "pcoa2")
+positions <- tibble::rownames_to_column(positions, var = "Samples")
+
+#Compute % variance explained
+percent_explained <- 100 * pcoa$eig / sum(pcoa$eig)
+pretty_pe <- format(round(percent_explained[1:2], 1), nsmall = 1)
+xlab <- glue::glue("PCoA 1 ({pretty_pe[1]}%)")
+ylab <- glue::glue("PCoA 2 ({pretty_pe[2]}%)")
+
+#Load metadata and merge
+df5 <- read.csv("~/Downloads/Meta_for_pcoa.csv")
+z <- inner_join(positions, df5, by = "Samples")
+
+#Calculate centroids
+
+centroid <- z %>%
+  dplyr::group_by(Study_Groups) %>%
+  dplyr::summarize(
+    axis1 = mean(pcoa1, na.rm = TRUE),
+    axis2 = mean(pcoa2, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+str(z)
+
+#Add centroid coords to each point (for star plot)
+star <- z %>%
+  group_by(Study_Groups) %>%
+  mutate(centroid1 = mean(pcoa1),
+         centroid2 = mean(pcoa2)) %>%
+  ungroup()
+
+
+#Add custom labels (adjust x/y if needed based on groups), here for 2 groups
+legend_new <- tibble(
+  x = c(-0.0501, 0.2041),
+  y = c(-0.0565, 0.0158),
+  label_1 = c("Cases", "Control")
+)
+
+
+#PCoA Plot
+ggplot(star, aes(x = pcoa1, xend = centroid1,
+                 y = pcoa2, yend = centroid2,
+                 color = Study_Groups)) +
+  geom_segment() +
+  stat_ellipse(level = 0.95) +
+  geom_point() +
+  geom_point(data = centroid, aes(x = axis1, y = axis2, color = Study_Groups),
+             shape = 15, size = 3, inherit.aes = FALSE) +
+  geom_richtext(data = legend_new,
+                aes(x = x, y = y, label = label_1, color = label_1),
+                fontface = "bold", size = 2.5,
+                inherit.aes = FALSE, show.legend = FALSE) +
+  coord_fixed(xlim = c(-0.8, 0.8), ylim = c(-0.8, 0.8)) +
+  labs(x = xlab, y = ylab) +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(face = "bold", size = 16),
+    axis.title.y = element_text(face = "bold", size = 16),
+    axis.text.x = element_text(size = 16, face = "bold"),
+    axis.text.y = element_text(size = 16, face = "bold"),
+    legend.title = element_text(face = "bold", size = 16),
+    legend.text = element_text(face = "bold", size = 16)
+  )
+
+########### Permanova test usinh adonis2 ###########################
+# Load required library
+library(vegan)
+
+#Calculate Bray-Curtis dissimilarity matrix
+braycurtis <- vegdist(df, method = "bray")  # df = your OTU or ASV table (samples as rows, taxa as columns)
+
+#Run PERMANOVA with Study_Groups as explanatory variable
+t <- adonis2(braycurtis ~ Study_Groups, data = df5, permutations = 1e4)
+New File at / · zaibahasankhan/Microbiome
